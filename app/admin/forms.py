@@ -2,9 +2,9 @@
 # Created by yang
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField,FileField,TextAreaField,SelectField
+from wtforms import StringField, PasswordField, SubmitField, FileField, TextAreaField, SelectField
 from wtforms.validators import DataRequired, ValidationError
-from app.models import Admin,Tag
+from app.models import Admin, Tag
 
 
 class LoginForm(FlaskForm):
@@ -46,6 +46,7 @@ class LoginForm(FlaskForm):
         if admin == 0:
             raise ValidationError("账号不存在!")
 
+
 class TagForm(FlaskForm):
     name = StringField(
         label="名称",
@@ -65,6 +66,8 @@ class TagForm(FlaskForm):
             "class": "btn btn-primary",
         }
     )
+
+
 class MovieForm(FlaskForm):
     title = StringField(
         label="片名",
@@ -159,6 +162,32 @@ class MovieForm(FlaskForm):
             "placeholder": "请选择上映时间！",
             "id": "input_release_time"
         }
+    )
+    submit = SubmitField(
+        '编辑',
+        render_kw={
+            "class": "btn btn-primary",
+        }
+    )
+
+class PreviewForm(FlaskForm):
+    title = StringField(
+        label="预告标题",
+        validators=[
+            DataRequired("请输入预告标题！")
+        ],
+        description="预告标题",
+        render_kw={
+            "class": "form-control",
+            "placeholder": "请输入预告标题！"
+        }
+    )
+    logo = FileField(
+        label="预告封面",
+        validators=[
+            DataRequired("请上传预告封面！")
+        ],
+        description="预告封面",
     )
     submit = SubmitField(
         '编辑',
