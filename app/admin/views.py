@@ -3,9 +3,10 @@
 
 from . import admin
 from flask import render_template, redirect, url_for,flash,request,session
-from app.admin.forms import LoginForm
-from app.models import Admin
+from app.admin.forms import LoginForm,TagForm
+from app.models import Admin,Tag
 from functools import wraps
+from app import db
 
 def admin_login_req(f):
     @wraps(f)
@@ -50,10 +51,25 @@ def pwd():
     return render_template("admin/pwd.html")
 
 
-@admin.route("/tag/add")
+@admin.route("/tag/add",methods=["GET","POST"])
 @admin_login_req
 def tag_add():
-    return render_template("admin/tag_add.html")
+    form = TagForm()
+    if form.validate_on_submit():
+        data = form.data
+        tags = Tag.query.filter_by(name=data['name']).count()
+        print("tags:",tags)
+        if tags == 1:
+            flash("该标签已存在","err")
+            return redirect(url_for("admin.tag_add"))
+        tag=Tag(
+            name = data['name']
+        )
+        db.session.add(tag)
+        db.session.commit()
+        flash("添加成功", "ok")
+        return redirect(url_for("admin.tag_add"))
+    return render_template("admin/tag_add.html",form=form)
 
 
 @admin.route("/tag/list")
