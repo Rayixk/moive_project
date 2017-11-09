@@ -7,7 +7,7 @@ import uuid
 from . import admin
 from werkzeug.utils import secure_filename
 from flask import render_template, redirect, url_for, flash, request, session
-from app.admin.forms import LoginForm, TagForm, MovieForm, PreviewForm, PwdForm, AuthForm,RoleForm
+from app.admin.forms import LoginForm, TagForm, MovieForm, PreviewForm, PwdForm, AuthForm,RoleForm,AdminForm
 from app.models import Admin, Tag, Movie, Preview, User, Comment, Moviecol, Adminlog, Oplog, Userlog, Auth,Role
 from functools import wraps
 from app import db, app
@@ -618,13 +618,40 @@ def role_del(id=None):
 
 
 
-@admin.route("/admin/add")
+# 添加管理员
+@admin.route("/admin/add/", methods=["GET", "POST"])
 @admin_login_req
+# @admin_auth
 def admin_add():
-    return render_template("admin/admin_add.html")
+    form = AdminForm()
+    from werkzeug.security import generate_password_hash
+    if form.validate_on_submit():
+        data = form.data
+        admin = Admin(
+            name=data["name"],
+            pwd=generate_password_hash(data["pwd"]),
+            role_id=data["role_id"],
+            is_super=1
+        )
+        db.session.add(admin)
+        db.session.commit()
+        flash("添加管理员成功！", "ok")
+    return render_template("admin/admin_add.html", form=form)
 
 
-@admin.route("/admin/list")
+# 管理员列表
+@admin.route("/admin/list/<int:page>/", methods=["GET"])
 @admin_login_req
-def admin_list():
-    return render_template("admin/admin_list.html")
+# @admin_auth
+def admin_list(page=None):
+    if page is None:
+        page = 1
+    page_data = Admin.query.join(
+        Role
+    ).filter(
+        Role.id == Admin.role_id
+    ).order_by(
+        Admin.addtime.desc()
+    ).paginate(page=page, per_page=10)
+    return render_template("admin/admin_list.html", page_data=page_data)
+
