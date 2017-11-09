@@ -43,10 +43,10 @@ insert into userlog(user_id,ip,addtime) values(1,"192.168.4.1",now());
 insert into userlog(user_id,ip,addtime) values(2,"192.168.4.2",now());
 insert into userlog(user_id,ip,addtime) values(3,"192.168.4.3",now());
 insert into userlog(user_id,ip,addtime) values(4,"192.168.4.4",now());
-insert into userlog(user_id,ip,addtime) values(5,"192.168.4.5",now());
-insert into userlog(user_id,ip,addtime) values(6,"192.168.4.6",now());
-insert into userlog(user_id,ip,addtime) values(7,"192.168.4.7",now());
-insert into userlog(user_id,ip,addtime) values(8,"192.168.4.8",now());
-insert into userlog(user_id,ip,addtime) values(9,"192.168.4.9",now());
+insert into userlog(user_id,ip,addtime) values(1,"192.168.4.5",now());
+insert into userlog(user_id,ip,addtime) values(2,"192.168.4.6",now());
+insert into userlog(user_id,ip,addtime) values(3,"192.168.4.7",now());
+insert into userlog(user_id,ip,addtime) values(4,"192.168.4.8",now());
+insert into userlog(user_id,ip,addtime) values(1,"192.168.4.9",now());
 
 /*print(request.script_root);print(request.url_rule)*/

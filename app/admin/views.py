@@ -8,7 +8,7 @@ from . import admin
 from werkzeug.utils import secure_filename
 from flask import render_template, redirect, url_for,flash,request,session
 from app.admin.forms import LoginForm,TagForm,MovieForm,PreviewForm,PwdForm
-from app.models import Admin,Tag,Movie,Preview,User,Comment,Moviecol
+from app.models import Admin,Tag,Movie,Preview,User,Comment,Moviecol,Adminlog,Oplog,Userlog
 from functools import wraps
 from app import db,app
 
@@ -26,6 +26,13 @@ def change_filename(filename):
     filename = datetime.datetime.now().strftime("%Y%m%d%H%M%S") + str(uuid.uuid4().hex) + fileinfo[-1]
     return filename
 
+# 上下应用处理器
+@admin.context_processor
+def tpl_extra():
+    data = dict(
+        online_time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    )
+    return data
 
 
 @admin.route("/")
@@ -44,6 +51,13 @@ def login():
             flash("密码错误!",'err')
             return redirect(url_for("admin.login"))
         session["admin"]=data["account"]
+        session["admin_id"] = admin.id
+        adminlog = Adminlog(
+            admin_id=admin.id,
+            ip=request.remote_addr,
+        )
+        db.session.add(adminlog)
+        db.session.commit()
         return redirect(request.args.get("next") or url_for("admin.index"))
 
     return render_template("admin/login.html",form=form)
@@ -53,6 +67,7 @@ def login():
 @admin_login_req
 def logout():
     session.pop("admin",None)
+    session.pop("admin_id", None)
     return redirect(url_for("admin.login"))
 
 
@@ -90,6 +105,13 @@ def tag_add():
         db.session.add(tag)
         db.session.commit()
         flash("添加成功", "ok")
+        oplog = Oplog(
+            admin_id=session["admin_id"],
+            ip=request.remote_addr,
+            reason="添加标签%s" % data["name"]
+        )
+        db.session.add(oplog)
+        db.session.commit()
         return redirect(url_for("admin.tag_add"))
     return render_template("admin/tag_add.html",form=form)
 
@@ -418,22 +440,55 @@ def moviecol_del(id=None):
     return redirect(url_for('admin.moviecol_list', page=1))
 
 
-@admin.route("/oplog/list")
+# 操作日志
+@admin.route("/oplog/list/<int:page>/", methods=["GET"])
 @admin_login_req
-def oplog_list():
-    return render_template("admin/oplog_list.html")
+# @admin_auth
+def oplog_list(page=None):
+    if page is None:
+        page = 1
+    page_data = Oplog.query.join(
+        Admin
+    ).filter(
+        Admin.id == Oplog.admin_id,
+    ).order_by(
+        Oplog.addtime.desc()
+    ).paginate(page=page, per_page=10)
+    return render_template("admin/oplog_list.html", page_data=page_data)
 
 
-@admin.route("/adminloginlog/list")
+# 管理员登录日志
+@admin.route("/adminloginlog/list/<int:page>/", methods=["GET"])
 @admin_login_req
-def adminloginlog_list():
-    return render_template("admin/adminloginlog_list.html")
+# @admin_auth
+def adminloginlog_list(page=None):
+    if page is None:
+        page = 1
+    page_data = Adminlog.query.join(
+        Admin
+    ).filter(
+        Admin.id == Adminlog.admin_id,
+    ).order_by(
+        Adminlog.addtime.desc()
+    ).paginate(page=page, per_page=10)
+    return render_template("admin/adminloginlog_list.html", page_data=page_data)
 
 
-@admin.route("/userloginlog/list")
+# 会员登录日志
+@admin.route("/userloginlog/list/<int:page>/", methods=["GET"])
 @admin_login_req
-def userloginlog_list():
-    return render_template("admin/userloginlog_list.html")
+# @admin_auth
+def userloginlog_list(page=None):
+    if page is None:
+        page = 1
+    page_data = Userlog.query.join(
+        User
+    ).filter(
+        User.id == Userlog.user_id,
+    ).order_by(
+        Userlog.addtime.desc()
+    ).paginate(page=page, per_page=10)
+    return render_template("admin/userloginlog_list.html", page_data=page_data)
 
 
 @admin.route("/auth/add")
