@@ -6,7 +6,7 @@ import datetime
 import uuid
 from . import admin
 from werkzeug.utils import secure_filename
-from flask import render_template, redirect, url_for, flash, request, session
+from flask import render_template, redirect, url_for, flash, request, session,abort
 from app.admin.forms import LoginForm, TagForm, MovieForm, PreviewForm, PwdForm, AuthForm,RoleForm,AdminForm
 from app.models import Admin, Tag, Movie, Preview, User, Comment, Moviecol, Adminlog, Oplog, Userlog, Auth,Role
 from functools import wraps
@@ -21,6 +21,29 @@ def admin_login_req(f):
         return f(*args, **kwargs)
 
     return decorate_function
+
+
+
+# 权限控制装饰器
+def admin_auth(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        admin = Admin.query.join(
+            Role
+        ).filter(
+            Role.id == Admin.role_id,
+            Admin.id == session["admin_id"]
+        ).first()
+        auths = admin.role.auths
+        auths = list(map(lambda v: int(v), auths.split(",")))
+        auth_list = Auth.query.all()
+        urls = [v.url for v in auth_list for val in auths if val == v.id]
+        rule = request.url_rule
+        if str(rule) not in urls:
+            abort(404)
+        return f(*args, **kwargs)
+
+    return decorated_function
 
 
 # 修改文件名称
@@ -94,6 +117,7 @@ def pwd():
 
 @admin.route("/tag/add", methods=["GET", "POST"])
 @admin_login_req
+@admin_auth
 def tag_add():
     form = TagForm()
     if form.validate_on_submit():
